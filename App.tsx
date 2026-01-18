@@ -114,7 +114,7 @@ const App: React.FC = () => {
         <div className="flex-[5] bg-[#0d0d0d] rounded-[2rem] md:rounded-[2.5rem] border border-white/5 flex items-center justify-center relative overflow-hidden group">
           
           {/* Top-Left: Battery Status Indicator - Moved higher and further left per request */}
-          <div className="absolute top-2 left-4 flex items-center gap-1.5 px-2.5 py-1 bg-white/5 rounded-full border border-white/5 z-20">
+          <div className="absolute flex items-center gap-1.5 px-2.5 py-1 bg-white/5 rounded-full border border-white/5 z-20" style={{ left: '682px', top: '10px' }}>
             <span className="text-[10px] font-bold text-gray-400 tabular-nums">{battery.level}%</span>
             <div className="relative">
               {battery.charging ? (
@@ -143,9 +143,9 @@ const App: React.FC = () => {
 
           <div className="flex flex-col items-center">
             <div className="flex items-baseline font-bold tracking-tighter text-white">
-              <span className="text-[9rem] md:text-[14rem] leading-none">{h}</span>
+              <span className="text-[8rem] md:text-[14rem] leading-none">{h}</span>
               <span className="text-6xl md:text-9xl font-thin mx-1 opacity-20 leading-none">:</span>
-              <span className="text-[9rem] md:text-[14rem] leading-none">{m}</span>
+              <span className="text-[8rem] md:text-[14rem] leading-none">{m}</span>
               <span className="text-3xl md:text-5xl font-light ml-4 text-gray-600 leading-none tabular-nums">{s}</span>
             </div>
           </div>

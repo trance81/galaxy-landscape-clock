@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import CalendarWidget from './components/CalendarWidget';
 import { INITIAL_WEATHER, TOMORROW_WEATHER, DAY_AFTER_WEATHER, WEATHER_ICONS, MINI_WEATHER_ICONS } from './constants';
 import { RefreshCw, Battery, BatteryCharging, ExternalLink } from 'lucide-react';
@@ -42,8 +42,11 @@ const App: React.FC = () => {
     }
   }, []);
 
-  const fetchWeather = useCallback(async () => {
-    if (loading) return;
+  const loadingRef = useRef(false);
+  
+  const fetchWeather = useCallback(async (force = false) => {
+    if (loadingRef.current && !force) return;
+    loadingRef.current = true;
     setLoading(true);
     try {
       const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
@@ -92,13 +95,22 @@ const App: React.FC = () => {
     } catch (error) {
       console.error("Weather fetch error:", error);
     } finally {
+      loadingRef.current = false;
       setLoading(false);
     }
-  }, [loading]);
+  }, []);
 
+  // Initial weather fetch and auto-refresh every 4 hours (6 times per day)
   useEffect(() => {
     fetchWeather();
-  }, []);
+    
+    // Set up interval to refresh weather every 4 hours (14,400,000 ms)
+    const interval = setInterval(() => {
+      fetchWeather(true); // Force refresh even if loading
+    }, 4 * 60 * 60 * 1000); // 4 hours in milliseconds
+    
+    return () => clearInterval(interval);
+  }, [fetchWeather]);
 
   const { h, m, s } = (() => {
     const hh = time.getHours().toString().padStart(2, '0');

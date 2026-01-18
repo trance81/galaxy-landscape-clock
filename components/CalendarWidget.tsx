@@ -1,6 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { GoogleGenAI, Type } from '@google/genai';
+import React, { useState, useEffect } from 'react';
 
 interface MonthData {
   month: number;
@@ -14,7 +13,6 @@ interface Holiday {
 }
 
 const CalendarWidget: React.FC = () => {
-  const [holidays, setHolidays] = useState<Holiday[]>([]);
   const now = new Date();
   const monthNames = ["January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
@@ -33,42 +31,56 @@ const CalendarWidget: React.FC = () => {
     }
   ];
 
-  const fetchHolidays = useCallback(async () => {
-    try {
-      if (!process.env.API_KEY) return;
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: `List the major South Korean public holidays for ${currentYear} and ${currentYear + 1}. Include Solar and Lunar based holidays like Seollal and Chuseok.`,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                date: { type: Type.STRING, description: 'YYYY-MM-DD' },
-                name: { type: Type.STRING }
-              },
-              required: ["date", "name"]
-            }
-          }
-        }
-      });
-      
-      if (response.text) {
-        const data = JSON.parse(response.text);
-        setHolidays(data);
-      }
-    } catch (e) {
-      console.error("Failed to fetch holidays", e);
-    }
-  }, [currentYear]);
+  const [holidays, setHolidays] = useState<Holiday[]>([]);
 
+  // Tallyfy API에서 공휴일 가져오기 (API 키 불필요) - 4시간마다 자동 갱신 (날씨와 동일)
   useEffect(() => {
+    const fetchHolidays = async () => {
+      try {
+        // 현재 연도와 다음 연도의 공휴일을 동시에 가져오기
+        const [currentYearRes, nextYearRes] = await Promise.all([
+          fetch(`https://tallyfy.com/national-holidays/api/KR/${currentYear}.json`),
+          fetch(`https://tallyfy.com/national-holidays/api/KR/${currentYear + 1}.json`)
+        ]);
+
+        const currentYearData = currentYearRes.ok ? await currentYearRes.json() : null;
+        const nextYearData = nextYearRes.ok ? await nextYearRes.json() : null;
+
+        const fetchedHolidays: Holiday[] = [];
+
+        // Tallyfy API 응답 형식: { holidays: [...], year: ..., country: {...} }
+        if (currentYearData?.holidays && Array.isArray(currentYearData.holidays)) {
+          fetchedHolidays.push(...currentYearData.holidays.map((h: any) => ({
+            date: h.date,
+            name: h.local_name || h.name || ''
+          })));
+        }
+
+        if (nextYearData?.holidays && Array.isArray(nextYearData.holidays)) {
+          fetchedHolidays.push(...nextYearData.holidays.map((h: any) => ({
+            date: h.date,
+            name: h.local_name || h.name || ''
+          })));
+        }
+
+        if (fetchedHolidays.length > 0) {
+          setHolidays(fetchedHolidays);
+        }
+      } catch (error) {
+        console.error('Failed to fetch holidays from API:', error);
+      }
+    };
+
+    // 초기 로드 시 즉시 실행
     fetchHolidays();
-  }, [fetchHolidays]);
+
+    // 12시간마다 자동 갱신 (14,400,000 ms)
+    const interval = setInterval(() => {
+      fetchHolidays();
+    }, 12 * 60 * 60 * 1000); // 12 hours in milliseconds
+
+    return () => clearInterval(interval);
+  }, [currentYear]);
 
   const getDaysInMonth = (month: number, year: number) => new Date(year, month + 1, 0).getDate();
   const getFirstDayOfMonth = (month: number, year: number) => new Date(year, month, 1).getDay();

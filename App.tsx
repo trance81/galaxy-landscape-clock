@@ -123,7 +123,7 @@ const App: React.FC = () => {
     <div className="relative w-full h-screen bg-black flex p-3 md:p-4 gap-3 md:gap-4 overflow-hidden select-none">
       <div className="flex-1 flex flex-col gap-3 md:gap-4 h-full">
         {/* Main Clock Card */}
-        <div className="flex-[5] bg-[#0d0d0d] rounded-[2rem] md:rounded-[2.5rem] border border-white/5 flex items-center justify-center relative overflow-hidden group">
+        <div className="flex-[3] md:flex-[5] bg-[#0d0d0d] rounded-[2rem] md:rounded-[2.5rem] border border-white/5 flex items-center justify-center relative overflow-hidden group">
           
           {/* Top-Left: Battery Status Indicator - Moved higher and further left per request */}
           <div className="absolute flex items-center gap-1.5 px-2.5 py-1 bg-white/5 rounded-full border border-white/5 z-20" style={{ left: '682px', top: '10px' }}>
@@ -155,15 +155,15 @@ const App: React.FC = () => {
 
           <div className="flex flex-col items-center">
             <div className="flex items-baseline font-bold tracking-tighter text-white">
-              <span className="text-[8rem] md:text-[14rem] leading-none">{h}</span>
-              <span className="text-6xl md:text-9xl font-thin mx-1 opacity-20 leading-none">:</span>
-              <span className="text-[8rem] md:text-[14rem] leading-none">{m}</span>
-              <span className="text-3xl md:text-5xl font-light ml-4 text-gray-600 leading-none tabular-nums">{s}</span>
+              <span className="text-[5rem] sm:text-[6rem] md:text-[14rem] leading-none">{h}</span>
+              <span className="text-4xl sm:text-5xl md:text-9xl font-thin mx-1 opacity-20 leading-none">:</span>
+              <span className="text-[5rem] sm:text-[6rem] md:text-[14rem] leading-none">{m}</span>
+              <span className="text-2xl sm:text-3xl md:text-5xl font-light ml-2 sm:ml-4 text-gray-600 leading-none tabular-nums">{s}</span>
             </div>
           </div>
         </div>
 
-        <div className="flex-[4] flex gap-3 md:gap-4">
+        <div className="flex-[5] md:flex-[4] flex gap-3 md:gap-4">
           {/* Weather Widget */}
           <div className={`flex-1 bg-[#0d0d0d] rounded-[2rem] md:rounded-[2.5rem] border border-white/5 p-4 md:p-5 flex flex-col justify-between transition-opacity duration-500 ${loading ? 'opacity-50' : 'opacity-100'}`}>
             <div className="flex justify-between items-start">
@@ -231,7 +231,7 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      <div className="w-[30%] md:w-[32%] bg-[#0d0d0d] rounded-[2rem] md:rounded-[2.5rem] border border-white/5 overflow-hidden flex flex-col h-full shadow-inner">
+      <div className="w-[40%] md:w-[32%] bg-[#0d0d0d] rounded-[2rem] md:rounded-[2.5rem] border border-white/5 overflow-hidden flex flex-col h-full shadow-inner">
         <CalendarWidget />
       </div>
 

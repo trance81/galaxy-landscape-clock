@@ -9,6 +9,9 @@ import CalendarWidget from './components/CalendarWidget';
 import { INITIAL_WEATHER, TOMORROW_WEATHER, DAY_AFTER_WEATHER, WEATHER_ICONS, MINI_WEATHER_ICONS } from './constants';
 import { RefreshCw, Battery, BatteryCharging, ExternalLink, Settings, X } from 'lucide-react';
 
+// 버전 정보: 0.1 단위로 시작
+const VERSION = '0.1';
+
 // App 컴포넌트: WinForms의 Form 클래스와 비슷합니다
 // React.FC는 React Function Component의 약자로, 이 컴포넌트가 함수형 컴포넌트임을 나타냅니다
 const App: React.FC = () => {
@@ -532,7 +535,7 @@ const App: React.FC = () => {
       {/* ============================================================ */}
       {showSettingsModal && (
         <div 
-          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-3 md:p-4"
           onClick={(e) => {
             // 배경 클릭 시 팝업 닫기
             if (e.target === e.currentTarget) {
@@ -541,8 +544,9 @@ const App: React.FC = () => {
           }}
         >
           {/* 모달 내용: 배경 클릭과 구분하기 위해 stopPropagation 사용 */}
+          {/* 모바일 대응: w-full로 전체 너비 사용, max-w-2xl은 데스크탑에서만 적용 */}
           <div 
-            className="bg-[#0d0d0d] rounded-[2rem] border border-white/10 p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            className="bg-[#0d0d0d] rounded-[2rem] border border-white/10 p-4 md:p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* 모달 헤더 */}
@@ -685,6 +689,12 @@ const App: React.FC = () => {
               >
                 기본값으로 복원
               </button>
+            </div>
+
+            {/* 버전 표시: 설정 팝업 하단에 표시 */}
+            <div className="mt-4 pt-3 border-t border-white/5 text-center">
+              {/* 번인 방지: 텍스트 색상을 #cfcfcf로 설정 */}
+              <span className="text-[10px] text-gray-500 font-medium" style={{ color: '#cfcfcf' }}>Version {VERSION}</span>
             </div>
           </div>
         </div>

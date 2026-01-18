@@ -7,7 +7,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import CalendarWidget from './components/CalendarWidget';
 import { INITIAL_WEATHER, TOMORROW_WEATHER, DAY_AFTER_WEATHER, WEATHER_ICONS, MINI_WEATHER_ICONS } from './constants';
-import { RefreshCw, Battery, BatteryCharging, ExternalLink } from 'lucide-react';
+import { RefreshCw, Battery, BatteryCharging, ExternalLink, Settings, X } from 'lucide-react';
 
 // App 컴포넌트: WinForms의 Form 클래스와 비슷합니다
 // React.FC는 React Function Component의 약자로, 이 컴포넌트가 함수형 컴포넌트임을 나타냅니다
@@ -34,6 +34,67 @@ const App: React.FC = () => {
   // 배터리 상태를 저장하는 상태 변수 (레벨과 충전 중 여부)
   // <{ ... }>는 TypeScript의 타입 지정입니다 (WinForms의 타입 지정과 유사)
   const [battery, setBattery] = useState<{ level: number; charging: boolean | null }>({ level: 100, charging: false });
+
+  // ============================================================
+  // 레이아웃 설정 타입 정의
+  // ============================================================
+  // 각 디바이스 타입별 레이아웃 비율을 저장하는 인터페이스
+  interface LayoutSettings {
+    clock: number;        // 시계 영역의 flex 비율
+    clockFontSize: number; // 시계 폰트 크기 (rem 단위)
+    weather: number;      // 날씨 영역의 flex 비율
+    calendar: number;     // 달력 영역의 너비 (%)
+  }
+
+  // 디바이스 타입별 기본 설정값
+  const defaultLayoutSettings: { mobile: LayoutSettings; tablet: LayoutSettings; desktop: LayoutSettings } = {
+    mobile: { clock: 3, clockFontSize: 5, weather: 5, calendar: 40 },     // 모바일 기본값
+    tablet: { clock: 4, clockFontSize: 6, weather: 4, calendar: 35 },     // 태블릿 기본값
+    desktop: { clock: 5, clockFontSize: 14, weather: 4, calendar: 32 }    // 데스크탑 기본값
+  };
+
+  // ============================================================
+  // 레이아웃 설정 상태 관리 및 로컬 스토리지 연동
+  // ============================================================
+  // 로컬 스토리지에서 설정을 불러오는 함수 (WinForms의 Settings.Default와 비슷)
+  const loadLayoutSettings = (): { mobile: LayoutSettings; tablet: LayoutSettings; desktop: LayoutSettings } => {
+    try {
+      const saved = localStorage.getItem('layoutSettings');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (error) {
+      console.error('Failed to load layout settings:', error);
+    }
+    return defaultLayoutSettings; // 저장된 설정이 없으면 기본값 사용
+  };
+
+  // 레이아웃 설정을 로컬 스토리지에 저장하는 함수
+  const saveLayoutSettings = (settings: { mobile: LayoutSettings; tablet: LayoutSettings; desktop: LayoutSettings }) => {
+    try {
+      localStorage.setItem('layoutSettings', JSON.stringify(settings));
+    } catch (error) {
+      console.error('Failed to save layout settings:', error);
+    }
+  };
+
+  // 현재 레이아웃 설정 상태 변수
+  const [layoutSettings, setLayoutSettings] = useState<{ mobile: LayoutSettings; tablet: LayoutSettings; desktop: LayoutSettings }>(loadLayoutSettings);
+
+  // 설정 팝업 표시 여부를 저장하는 상태 변수
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+
+  // 현재 디바이스 타입을 감지하는 함수 (WinForms의 Screen.PrimaryScreen.WorkingArea와 비슷)
+  const getDeviceType = (): 'mobile' | 'tablet' | 'desktop' => {
+    if (typeof window === 'undefined') return 'desktop';
+    const width = window.innerWidth;
+    if (width < 768) return 'mobile';      // 모바일: 768px 미만
+    if (width < 1024) return 'tablet';     // 태블릿: 768px~1024px
+    return 'desktop';                       // 데스크탑: 1024px 이상
+  };
+
+  // 현재 디바이스 타입에 맞는 레이아웃 설정을 가져옵니다
+  const currentLayout = layoutSettings[getDeviceType()];
 
   // ============================================================
   // 헬퍼 함수 (Helper Functions)
@@ -263,7 +324,10 @@ const App: React.FC = () => {
         {/* border border-white/5: 흰색 5% 투명도 테두리 */}
         {/* relative: 내부의 absolute 요소들의 기준점 */}
         {/* overflow-hidden: 넘치는 내용 숨김 */}
-        <div className="flex-[3] md:flex-[5] bg-[#0d0d0d] rounded-[2rem] md:rounded-[2.5rem] border border-white/5 flex items-center justify-center relative overflow-hidden group">
+        <div 
+          className="bg-[#0d0d0d] rounded-[2rem] md:rounded-[2.5rem] border border-white/5 flex items-center justify-center relative overflow-hidden group"
+          style={{ flex: `${currentLayout.clock}` }}
+        >
           
           {/* 좌측 상단: 배터리 상태 표시기 */}
           {/* absolute: 절대 위치 지정 (부모 요소의 relative를 기준으로 배치) */}
@@ -303,35 +367,35 @@ const App: React.FC = () => {
             </button>
           </div>
 
-          {/* 시계 표시 영역 */}
+          {/* 시계 표시 영역 - 클릭하면 설정 팝업이 나타납니다 */}
           {/* items-center: 세로 중앙 정렬 */}
-          <div className="flex flex-col items-center">
+          {/* cursor-pointer: 마우스 커서를 포인터로 변경 (클릭 가능함을 표시) */}
+          {/* onClick: 클릭 이벤트 핸들러 - 설정 팝업을 엽니다 */}
+          <div className="flex flex-col items-center cursor-pointer" onClick={() => setShowSettingsModal(true)}>
             {/* items-baseline: 텍스트를 기준선으로 정렬 (숫자가 깔끔하게 정렬됨) */}
             {/* tracking-tighter: 글자 간격 좁히기 */}
-            <div className="flex items-baseline font-bold tracking-tighter text-white">
+            {/* style을 사용하여 동적으로 폰트 크기를 설정합니다 */}
+            <div className="flex items-baseline font-bold tracking-tighter text-white" style={{ fontSize: `${currentLayout.clockFontSize}rem` }}>
               {/* 시 (Hours) */}
-              {/* text-[5rem]: 폰트 크기 5rem (80px) - 모바일 */}
-              {/* sm:text-[6rem]: 작은 태블릿에서는 6rem */}
-              {/* md:text-[14rem]: 데스크톱에서는 14rem */}
               {/* {h}: JavaScript 변수 출력 (위에서 계산한 시간) */}
-              <span className="text-[5rem] sm:text-[6rem] md:text-[14rem] leading-none">{h}</span>
+              <span className="leading-none">{h}</span>
               
-              {/* 시와 분 사이의 구분자 (:) */}
-              <span className="text-4xl sm:text-5xl md:text-9xl font-thin mx-1 opacity-20 leading-none">:</span>
+              {/* 시와 분 사이의 구분자 (:) - 부모의 폰트 크기에 비례 */}
+              <span className="font-thin mx-1 opacity-20 leading-none" style={{ fontSize: '0.6em' }}>:</span>
               
               {/* 분 (Minutes) */}
-              <span className="text-[5rem] sm:text-[6rem] md:text-[14rem] leading-none">{m}</span>
+              <span className="leading-none">{m}</span>
               
-              {/* 초 (Seconds) - 작은 폰트 크기 */}
+              {/* 초 (Seconds) - 부모의 폰트 크기에 비례하여 작게 */}
               {/* tabular-nums: 숫자가 같은 너비를 차지하도록 (시계처럼) */}
-              <span className="text-2xl sm:text-3xl md:text-5xl font-light ml-2 sm:ml-4 text-gray-600 leading-none tabular-nums">{s}</span>
+              <span className="font-light ml-2 sm:ml-4 text-gray-600 leading-none tabular-nums" style={{ fontSize: '0.3em' }}>{s}</span>
             </div>
           </div>
         </div>
 
         {/* 하단 영역: 날씨 위젯들 */}
-        {/* flex-[5] md:flex-[4]: 모바일에서 5배, 데스크톱에서 4배 공간 차지 */}
-        <div className="flex-[5] md:flex-[4] flex gap-3 md:gap-4">
+        {/* style={{ flex: `${currentLayout.weather}` }}: 동적으로 flex 비율을 설정합니다 */}
+        <div className="flex gap-3 md:gap-4" style={{ flex: `${currentLayout.weather}` }}>
           {/* 날씨 위젯 */}
           {/* ${loading ? 'opacity-50' : 'opacity-100'}: 로딩 중이면 50% 투명도, 아니면 100% */}
           {/* template literal (백틱 ` `): JavaScript 문자열 보간 (WinForms의 $"{변수}" 와 비슷) */}
@@ -402,8 +466,11 @@ const App: React.FC = () => {
       </div>
 
       {/* 오른쪽 영역: 달력 위젯 */}
-      {/* w-[40%] md:w-[32%]: 너비 모바일 40%, 데스크톱 32% */}
-      <div className="w-[40%] md:w-[32%] bg-[#0d0d0d] rounded-[2rem] md:rounded-[2.5rem] border border-white/5 overflow-hidden flex flex-col h-full shadow-inner">
+      {/* style={{ width: `${currentLayout.calendar}%` }}: 동적으로 너비를 설정합니다 */}
+      <div 
+        className="bg-[#0d0d0d] rounded-[2rem] md:rounded-[2.5rem] border border-white/5 overflow-hidden flex flex-col h-full shadow-inner"
+        style={{ width: `${currentLayout.calendar}%` }}
+      >
         {/* CalendarWidget: 별도의 컴포넌트를 사용 */}
         {/* WinForms의 UserControl을 추가하는 것과 비슷합니다 */}
         <CalendarWidget />
@@ -414,6 +481,169 @@ const App: React.FC = () => {
       {/* left-1/2 -translate-x-1/2: 수평 중앙 정렬 (50% 위치에서 자신의 너비의 50%만큼 왼쪽으로 이동) */}
       {/* pointer-events-none: 마우스 이벤트 무시 (클릭 불가) */}
       <div className="absolute bottom-1 md:bottom-2 left-1/2 -translate-x-1/2 w-24 md:w-32 h-1 bg-white/10 rounded-full pointer-events-none" />
+
+      {/* ============================================================ */}
+      {/* 설정 팝업 모달 (WinForms의 Form.ShowDialog()와 비슷) */}
+      {/* ============================================================ */}
+      {showSettingsModal && (
+        <div 
+          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+          onClick={(e) => {
+            // 배경 클릭 시 팝업 닫기
+            if (e.target === e.currentTarget) {
+              setShowSettingsModal(false);
+            }
+          }}
+        >
+          {/* 모달 내용: 배경 클릭과 구분하기 위해 stopPropagation 사용 */}
+          <div 
+            className="bg-[#0d0d0d] rounded-[2rem] border border-white/10 p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 모달 헤더 */}
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <Settings className="w-5 h-5" />
+                레이아웃 설정
+              </h2>
+              {/* 닫기 버튼 */}
+              <button
+                onClick={() => setShowSettingsModal(false)}
+                className="p-2 hover:bg-white/5 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+
+            {/* 현재 디바이스 타입만 표시 */}
+            {(() => {
+              const currentDeviceType = getDeviceType();
+              const deviceName = { mobile: '모바일', tablet: '태블릿', desktop: '데스크탑' }[currentDeviceType];
+              const settings = layoutSettings[currentDeviceType];
+
+              return (
+                <div className="mb-6">
+                  {/* 현재 디바이스 타입 제목 */}
+                  <h3 className="text-sm font-semibold text-gray-300 mb-4">{deviceName} 설정</h3>
+
+                  {/* 시계 영역 크기 조절 */}
+                  <div className="mb-4">
+                    <label className="block text-xs text-gray-400 mb-2">시계 영역 크기: {settings.clock}</label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      value={settings.clock}
+                      onChange={(e) => {
+                        const newValue = parseInt(e.target.value);
+                        setLayoutSettings((prev) => {
+                          const updated = {
+                            ...prev,
+                            [currentDeviceType]: { ...prev[currentDeviceType], clock: newValue }
+                          };
+                          saveLayoutSettings(updated); // 로컬 스토리지에 저장
+                          return updated;
+                        });
+                      }}
+                      className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                    />
+                  </div>
+
+                  {/* 시계 폰트 크기 조절 */}
+                  <div className="mb-4">
+                    <label className="block text-xs text-gray-400 mb-2">시계 폰트 크기: {settings.clockFontSize}rem</label>
+                    <input
+                      type="range"
+                      min="3"
+                      max="20"
+                      step="0.5"
+                      value={settings.clockFontSize}
+                      onChange={(e) => {
+                        const newValue = parseFloat(e.target.value);
+                        setLayoutSettings((prev) => {
+                          const updated = {
+                            ...prev,
+                            [currentDeviceType]: { ...prev[currentDeviceType], clockFontSize: newValue }
+                          };
+                          saveLayoutSettings(updated);
+                          return updated;
+                        });
+                      }}
+                      className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                    />
+                  </div>
+
+                  {/* 날씨 영역 크기 조절 */}
+                  <div className="mb-4">
+                    <label className="block text-xs text-gray-400 mb-2">날씨 영역 크기: {settings.weather}</label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      value={settings.weather}
+                      onChange={(e) => {
+                        const newValue = parseInt(e.target.value);
+                        setLayoutSettings((prev) => {
+                          const updated = {
+                            ...prev,
+                            [currentDeviceType]: { ...prev[currentDeviceType], weather: newValue }
+                          };
+                          saveLayoutSettings(updated);
+                          return updated;
+                        });
+                      }}
+                      className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                    />
+                  </div>
+
+                  {/* 달력 영역 너비 조절 */}
+                  <div className="mb-4">
+                    <label className="block text-xs text-gray-400 mb-2">달력 영역 너비: {settings.calendar}%</label>
+                    <input
+                      type="range"
+                      min="20"
+                      max="60"
+                      value={settings.calendar}
+                      onChange={(e) => {
+                        const newValue = parseInt(e.target.value);
+                        setLayoutSettings((prev) => {
+                          const updated = {
+                            ...prev,
+                            [currentDeviceType]: { ...prev[currentDeviceType], calendar: newValue }
+                          };
+                          saveLayoutSettings(updated);
+                          return updated;
+                        });
+                      }}
+                      className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                    />
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* 기본값으로 복원 버튼 (현재 디바이스만) */}
+            <div className="mt-6 pt-4 border-t border-white/5">
+              <button
+                onClick={() => {
+                  const currentDeviceType = getDeviceType();
+                  setLayoutSettings((prev) => {
+                    const updated = {
+                      ...prev,
+                      [currentDeviceType]: defaultLayoutSettings[currentDeviceType]
+                    };
+                    saveLayoutSettings(updated);
+                    return updated;
+                  });
+                }}
+                className="w-full px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm text-gray-300 transition-colors"
+              >
+                기본값으로 복원
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

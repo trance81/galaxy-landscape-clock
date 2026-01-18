@@ -1,0 +1,8 @@
+
+{
+  "name": "Galaxy Landscape Clock",
+  "description": "A premium landscape-oriented clock and dashboard app for Galaxy devices.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

@@ -107,13 +107,15 @@ const CalendarWidget: React.FC = () => {
     return (
       <div key={`${year}-${month}`} className={`mb-1 transition-opacity duration-500 ${isCurrent ? 'opacity-100' : 'opacity-20'}`}>
         <div className="flex justify-between items-center mb-1 px-1">
-          <h2 className="text-sm md:text-base font-semibold text-gray-100">{monthNames[month]} {year}</h2>
+          {/* 번인 방지: 제목 색상도 #cfcfcf로 변경 */}
+          <h2 className="text-sm md:text-base font-semibold" style={{ color: '#cfcfcf' }}>{monthNames[month]} {year}</h2>
           {isCurrent && <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></div>}
         </div>
 
-        <div className="grid grid-cols-7 gap-y-0.5 text-center">
+        {/* 주간 간격을 더 타이트하게: gap-y-0 (간격 없음) */}
+        <div className="grid grid-cols-7 gap-y-0 text-center">
           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-            <span key={d + i} className={`text-[9px] font-bold mb-0.5 ${i === 0 ? 'text-red-500/80' : i === 6 ? 'text-blue-400/80' : 'text-gray-600'}`}>
+            <span key={d + i} className={`text-[9px] font-bold mb-[1px] ${i === 0 ? 'text-red-500/80' : i === 6 ? 'text-blue-400/80' : 'text-gray-600'}`}>
               {d}
             </span>
           ))}
@@ -124,21 +126,37 @@ const CalendarWidget: React.FC = () => {
             const isHoliday = holidays.some(h => h.date === dateObj.fullDate);
             
             // Color logic: Sunday (0) or Holiday = Red, Saturday (6) = Blue
-            let textColorClass = 'text-gray-200';
+            // 번인 방지: 일반 날짜는 #cfcfcf 색상 사용
+            let textColorStyle: React.CSSProperties | undefined = undefined;
+            let textColorClass = '';
+            
             if (dateObj.type !== 'current') {
+              // 이전/다음 달: 어두운 회색 유지
               textColorClass = 'text-gray-800';
             } else if (dayOfWeek === 0 || isHoliday) {
+              // 일요일/공휴일: 빨간색 유지
               textColorClass = 'text-red-500';
             } else if (dayOfWeek === 6) {
+              // 토요일: 파란색 유지
               textColorClass = 'text-blue-400';
+            } else {
+              // 일반 날짜: 번인 방지를 위해 #cfcfcf 색상 사용
+              textColorStyle = { color: '#cfcfcf' };
             }
 
             return (
-              <div key={index} className="flex items-center justify-center py-0.5">
-                <span className={`
-                  text-[12px] md:text-[13px] w-6 h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full transition-all
-                  ${isToday ? 'bg-white text-gray-800 font-bold shadow-lg shadow-white/10' : textColorClass}
-                `}>
+              <div key={index} className="flex items-center justify-center py-0">
+                {/* 번인 방지: 오늘 날짜 배경색도 #cfcfcf로 변경 */}
+                <span 
+                  className={`
+                    text-[12px] md:text-[13px] w-6 h-6 md:w-7 md:h-7 flex items-center justify-center rounded-full transition-all font-bold shadow-lg
+                    ${isToday ? '' : textColorClass}
+                  `}
+                  style={isToday 
+                    ? { backgroundColor: '#cfcfcf', color: '#000000', boxShadow: '0 10px 15px -3px rgba(207, 207, 207, 0.1)' }
+                    : textColorStyle
+                  }
+                >
                   {dateObj.day}
                 </span>
               </div>

@@ -96,6 +96,13 @@ const App: React.FC = () => {
   // 현재 디바이스 타입에 맞는 레이아웃 설정을 가져옵니다
   const currentLayout = layoutSettings[getDeviceType()];
 
+  // 번인 방지 패턴 랜덤화: 페이지 로드 시 랜덤하게 패턴 선택 (픽셀 편중 방지)
+  // useRef를 사용하여 컴포넌트 재렌더링 시에도 같은 값 유지
+  const burnInPatternRef = useRef(Math.floor(Math.random() * 4)); // 0~3 중 랜덤
+  const burnInPatternClass = burnInPatternRef.current === 0 
+    ? 'burn-in-prevention-clock' 
+    : `burn-in-prevention-clock-alt-${burnInPatternRef.current}`;
+
   // ============================================================
   // 헬퍼 함수 (Helper Functions)
   // ============================================================
@@ -333,7 +340,12 @@ const App: React.FC = () => {
           {/* absolute: 절대 위치 지정 (부모 요소의 relative를 기준으로 배치) */}
           {/* top-2 left-4: 위에서 8px, 왼쪽에서 16px 떨어진 위치 */}
           {/* z-20: z-index 20 (다른 요소 위에 표시) */}
-          <div className="absolute top-2 left-4 z-20">
+          {/* burn-in-prevention-buttons: AMOLED 번인 방지를 위한 픽셀 시프트 애니메이션 (±2px) */}
+          {/* will-change: transform - GPU 가속 힌트 */}
+          <div 
+            className="absolute top-2 left-4 z-20 burn-in-prevention-buttons"
+            style={{ willChange: 'transform' }}
+          >
             <div className="p-1.5 bg-white/5 rounded-full border border-white/5 text-gray-400 hover:text-white transition-all active:scale-95 flex items-center gap-1.5">
               <span className="text-[10px] font-bold tabular-nums">{battery.level}%</span>
               <div className="relative">
@@ -353,7 +365,12 @@ const App: React.FC = () => {
           </div>
 
           {/* 우측 상단: 새로고침 버튼 */}
-          <div className="absolute top-2 right-4 z-20">
+          {/* burn-in-prevention-buttons: AMOLED 번인 방지를 위한 픽셀 시프트 애니메이션 (±2px) */}
+          {/* will-change: transform - GPU 가속 힌트 */}
+          <div 
+            className="absolute top-2 right-4 z-20 burn-in-prevention-buttons"
+            style={{ willChange: 'transform' }}
+          >
             {/* button: HTML 버튼 요소 */}
             {/* onClick: 클릭 이벤트 핸들러 (WinForms의 button.Click 이벤트와 비슷) */}
             {/* () => fetchWeather(): 화살표 함수 (익명 함수) */}
@@ -374,8 +391,18 @@ const App: React.FC = () => {
           <div className="flex flex-col items-center cursor-pointer" onClick={() => setShowSettingsModal(true)}>
             {/* items-baseline: 텍스트를 기준선으로 정렬 (숫자가 깔끔하게 정렬됨) */}
             {/* tracking-tighter: 글자 간격 좁히기 */}
+            {/* {burnInPatternClass}: AMOLED 번인 방지를 위한 픽셀 시프트 애니메이션 (패턴 랜덤화) */}
             {/* style을 사용하여 동적으로 폰트 크기를 설정합니다 */}
-            <div className="flex items-baseline font-bold tracking-tighter text-white" style={{ fontSize: `${currentLayout.clockFontSize}rem` }}>
+            {/* color: #cfcfcf - 번인 방지를 위해 순수 흰색 대신 약간 회색 톤 사용 */}
+            {/* will-change: transform - GPU 가속 힌트로 번인 방지 애니메이션 최적화 */}
+            <div 
+              className={`flex items-baseline font-bold tracking-tighter ${burnInPatternClass}`}
+              style={{ 
+                fontSize: `${currentLayout.clockFontSize}rem`, 
+                color: '#cfcfcf',
+                willChange: 'transform'
+              }}
+            >
               {/* 시 (Hours) */}
               {/* {h}: JavaScript 변수 출력 (위에서 계산한 시간) */}
               <span className="leading-none">{h}</span>
@@ -399,29 +426,37 @@ const App: React.FC = () => {
           {/* 날씨 위젯 */}
           {/* ${loading ? 'opacity-50' : 'opacity-100'}: 로딩 중이면 50% 투명도, 아니면 100% */}
           {/* template literal (백틱 ` `): JavaScript 문자열 보간 (WinForms의 $"{변수}" 와 비슷) */}
-          <div className={`flex-1 bg-[#0d0d0d] rounded-[2rem] md:rounded-[2.5rem] border border-white/5 p-4 md:p-5 flex flex-col justify-between transition-opacity duration-500 ${loading ? 'opacity-50' : 'opacity-100'}`}>
+          {/* 날씨 패널 내부 여백 최소화: p-4 md:p-5 → p-2 md:p-3 (상하좌우 패딩 축소) */}
+          <div className={`flex-1 bg-[#0d0d0d] rounded-[2rem] md:rounded-[2.5rem] border border-white/5 p-2 md:p-3 flex flex-col justify-between transition-opacity duration-500 ${loading ? 'opacity-50' : 'opacity-100'}`}>
             <div className="flex justify-between items-start">
               <div className="flex flex-col">
                 {WEATHER_ICONS[weather.condition] || WEATHER_ICONS['clear sky']}
-                <span className="mt-1 text-xs text-gray-400 font-medium capitalize">{weather.condition}</span>
+                {/* 날씨 패널 내부 여백 최소화: mt-1 → mt-0.5 (상단 여백 축소) */}
+                <span className="mt-0.5 text-xs text-gray-400 font-medium capitalize">{weather.condition}</span>
               </div>
               <div className="text-right">
-                <span className="text-4xl md:text-5xl font-light tracking-tighter">{weather.temp}°</span>
-                <div className="flex justify-end gap-2 text-[10px] text-gray-500 font-medium mt-1 uppercase tracking-tight">
+                {/* 번인 방지: 숫자 색상을 #cfcfcf로 변경 */}
+                {/* 날씨 패널 공간 최소화: 폰트 크기를 text-3xl md:text-4xl로 축소 */}
+                <span className="text-3xl md:text-4xl font-light tracking-tighter" style={{ color: '#cfcfcf' }}>{weather.temp}°</span>
+                {/* 날씨 패널 내부 여백 최소화: mt-1 → mt-0.5 (상단 여백 축소) */}
+                <div className="flex justify-end gap-2 text-[10px] text-gray-500 font-medium mt-0.5 uppercase tracking-tight">
                   <span className="text-blue-400">L:{weather.low}°</span>
                   <span className="text-orange-400">H:{weather.high}°</span>
                 </div>
               </div>
             </div>
 
-            <div className="mt-auto space-y-1.5 pt-3 border-t border-white/5">
+            {/* 날씨 패널 내부 여백 최소화: space-y-1.5 pt-3 → space-y-1 pt-1.5 (요소 간격 및 상단 패딩 축소) */}
+            <div className="mt-auto space-y-1 pt-1.5 border-t border-white/5">
               <div className="flex justify-between items-center text-[10px] md:text-xs">
                  <span className="text-gray-500 font-medium">Humidity</span>
-                 <span className="text-gray-200 font-bold">{weather.humidity}%</span>
+                 {/* 번인 방지: 숫자 색상을 #cfcfcf로 변경 */}
+                 <span className="font-bold" style={{ color: '#cfcfcf' }}>{weather.humidity}%</span>
               </div>
               <div className="flex justify-between items-center text-[10px] md:text-xs">
                  <span className="text-gray-500 font-medium">Dust PM10 / PM2.5</span>
-                 <span className="text-gray-200 font-bold">{weather.pm10} / {weather.pm25}</span>
+                 {/* 번인 방지: 숫자 색상을 #cfcfcf로 변경 */}
+                 <span className="font-bold" style={{ color: '#cfcfcf' }}>{weather.pm10} / {weather.pm25}</span>
               </div>
               <div className="flex justify-between items-end">
                 <p className="text-[8px] text-gray-700 truncate opacity-60 uppercase tracking-widest max-w-[150px]">{weather.location}</p>
@@ -433,8 +468,10 @@ const App: React.FC = () => {
           </div>
 
           {/* Forecast Widget */}
-          <div className={`flex-1 bg-[#0d0d0d] rounded-[2rem] md:rounded-[2.5rem] border border-white/5 p-4 md:p-5 flex flex-col gap-3 transition-opacity duration-500 ${loading ? 'opacity-50' : 'opacity-100'}`}>
-             <div className="flex-1 flex items-center justify-between border-b border-white/5 pb-2">
+          {/* 예보 패널 내부 여백 최소화: p-4 md:p-5 → p-2 md:p-3, gap-3 → gap-1.5 (상하좌우 패딩 및 요소 간격 축소) */}
+          <div className={`flex-1 bg-[#0d0d0d] rounded-[2rem] md:rounded-[2.5rem] border border-white/5 p-2 md:p-3 flex flex-col gap-1.5 transition-opacity duration-500 ${loading ? 'opacity-50' : 'opacity-100'}`}>
+             {/* 예보 패널 내부 여백 최소화: pb-2 → pb-1 (하단 패딩 축소) */}
+             <div className="flex-1 flex items-center justify-between border-b border-white/5 pb-1">
                 <div className="flex flex-col">
                   <p className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">Tomorrow</p>
                   <p className="text-xs text-gray-500 capitalize">{forecast.tomorrow.condition}</p>
@@ -442,13 +479,15 @@ const App: React.FC = () => {
                 <div className="flex items-center gap-3">
                   {MINI_WEATHER_ICONS[forecast.tomorrow.condition] || MINI_WEATHER_ICONS['partly cloudy']}
                   <div className="flex flex-col items-end">
-                    <span className="text-xl font-bold text-gray-200">{forecast.tomorrow.high}°</span>
+                    {/* 번인 방지: 숫자 색상을 #cfcfcf로 변경 */}
+                    <span className="text-xl font-bold" style={{ color: '#cfcfcf' }}>{forecast.tomorrow.high}°</span>
                     <span className="text-[10px] text-gray-500 font-medium">{forecast.tomorrow.low}°</span>
                   </div>
                 </div>
              </div>
 
-             <div className="flex-1 flex items-center justify-between pt-1">
+             {/* 예보 패널 내부 여백 최소화: pt-1 → pt-0.5 (상단 패딩 축소) */}
+             <div className="flex-1 flex items-center justify-between pt-0.5">
                 <div className="flex flex-col">
                   <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Day After</p>
                   <p className="text-xs text-gray-500 capitalize">{forecast.dayAfter.condition}</p>
@@ -456,7 +495,8 @@ const App: React.FC = () => {
                 <div className="flex items-center gap-3">
                   {MINI_WEATHER_ICONS[forecast.dayAfter.condition] || MINI_WEATHER_ICONS['cloudy']}
                   <div className="flex flex-col items-end">
-                    <span className="text-xl font-bold text-gray-200">{forecast.dayAfter.high}°</span>
+                    {/* 번인 방지: 숫자 색상을 #cfcfcf로 변경 */}
+                    <span className="text-xl font-bold" style={{ color: '#cfcfcf' }}>{forecast.dayAfter.high}°</span>
                     <span className="text-[10px] text-gray-500 font-medium">{forecast.dayAfter.low}°</span>
                   </div>
                 </div>
@@ -480,7 +520,12 @@ const App: React.FC = () => {
       {/* absolute bottom-1: 하단에서 4px 떨어진 위치 */}
       {/* left-1/2 -translate-x-1/2: 수평 중앙 정렬 (50% 위치에서 자신의 너비의 50%만큼 왼쪽으로 이동) */}
       {/* pointer-events-none: 마우스 이벤트 무시 (클릭 불가) */}
-      <div className="absolute bottom-1 md:bottom-2 left-1/2 -translate-x-1/2 w-24 md:w-32 h-1 bg-white/10 rounded-full pointer-events-none" />
+      {/* burn-in-prevention-buttons: AMOLED 번인 방지를 위한 픽셀 시프트 애니메이션 (±2px) */}
+      {/* will-change: transform - GPU 가속 힌트 */}
+      <div 
+        className="absolute bottom-1 md:bottom-2 left-1/2 -translate-x-1/2 w-24 md:w-32 h-1 bg-white/10 rounded-full pointer-events-none burn-in-prevention-buttons"
+        style={{ willChange: 'transform' }}
+      />
 
       {/* ============================================================ */}
       {/* 설정 팝업 모달 (WinForms의 Form.ShowDialog()와 비슷) */}

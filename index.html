@@ -75,6 +75,98 @@
       height: 100vh;
       display: block;
     }
+
+    /* ============================================================ */
+    /* AMOLED 번인 방지 애니메이션 (개선 버전) */
+    /* ============================================================ */
+    /* 픽셀 시프트: 고정 요소를 주기적으로 이동시켜 번인을 방지합니다 */
+    /* translate3d 사용: GPU 가속, 레이아웃 리플로우 방지 */
+    
+    /* 시계 숫자 미세 이동 (30초 주기, ±1~2px) - 일상적인 미세 이동 */
+    @keyframes pixel-shift-clock-subtle {
+      0%, 100% { transform: translate3d(0, 0, 0); }
+      20% { transform: translate3d(1px, 1px, 0); }
+      40% { transform: translate3d(-1px, -1px, 0); }
+      60% { transform: translate3d(1px, -1px, 0); }
+      80% { transform: translate3d(-1px, 1px, 0); }
+    }
+
+    /* 시계 숫자 큰 이동 (15분 주기, ±8~12px) - 주기적인 큰 이동 */
+    @keyframes pixel-shift-clock-major-1 {
+      0%, 100% { transform: translate3d(0, 0, 0); }
+      50% { transform: translate3d(10px, 8px, 0); }
+    }
+
+    @keyframes pixel-shift-clock-major-2 {
+      0%, 100% { transform: translate3d(0, 0, 0); }
+      50% { transform: translate3d(-10px, -8px, 0); }
+    }
+
+    @keyframes pixel-shift-clock-major-3 {
+      0%, 100% { transform: translate3d(0, 0, 0); }
+      50% { transform: translate3d(8px, -10px, 0); }
+    }
+
+    @keyframes pixel-shift-clock-major-4 {
+      0%, 100% { transform: translate3d(0, 0, 0); }
+      50% { transform: translate3d(-8px, 10px, 0); }
+    }
+
+    /* 배터리/버튼 픽셀 시프트 (60초 주기, ±2px) - 최소 1px 이상 보장 */
+    @keyframes pixel-shift-buttons {
+      0%, 100% { transform: translate3d(0, 0, 0); }
+      25% { transform: translate3d(2px, 2px, 0); }
+      50% { transform: translate3d(-2px, -2px, 0); }
+      75% { transform: translate3d(2px, -2px, 0); }
+    }
+
+    /* 고정 요소에 픽셀 시프트 적용 */
+    /* will-change: transform - GPU 가속 힌트 */
+    .burn-in-prevention-clock {
+      will-change: transform;
+      animation: 
+        pixel-shift-clock-subtle 30s ease-in-out infinite,
+        pixel-shift-clock-major-1 900s ease-in-out infinite;
+    }
+
+    /* 패턴 랜덤화를 위해 다양한 큰 이동 패턴 적용 */
+    .burn-in-prevention-clock-alt-1 {
+      will-change: transform;
+      animation: 
+        pixel-shift-clock-subtle 30s ease-in-out infinite,
+        pixel-shift-clock-major-2 900s ease-in-out infinite;
+    }
+
+    .burn-in-prevention-clock-alt-2 {
+      will-change: transform;
+      animation: 
+        pixel-shift-clock-subtle 30s ease-in-out infinite,
+        pixel-shift-clock-major-3 900s ease-in-out infinite;
+    }
+
+    .burn-in-prevention-clock-alt-3 {
+      will-change: transform;
+      animation: 
+        pixel-shift-clock-subtle 30s ease-in-out infinite,
+        pixel-shift-clock-major-4 900s ease-in-out infinite;
+    }
+
+    .burn-in-prevention-buttons {
+      will-change: transform;
+      animation: pixel-shift-buttons 60s ease-in-out infinite;
+    }
+
+    /* 밝기 페이드: 일정 시간 후 자동으로 밝기 감소 (선택적) */
+    @keyframes brightness-fade {
+      0% { opacity: 1; }
+      95% { opacity: 1; }
+      100% { opacity: 0.7; }
+    }
+
+    /* 밝기 페이드 적용 (30분 후 밝기 감소) */
+    .auto-dim {
+      animation: brightness-fade 1800s ease-in-out infinite;
+    }
   </style>
 <script type="importmap">
 {

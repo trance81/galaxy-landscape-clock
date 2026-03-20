@@ -40,7 +40,10 @@ export const ClockWidget: React.FC<ClockWidgetProps> = ({
   onRefreshClick
 }) => {
   // 시간 포맷팅 (시, 분, 초를 문자열로 변환)
-  const { h, m, s } = formatTime(time);
+  const { h, m } = formatTime(time);
+  const seconds = time.getSeconds();
+  // 초 진행률: 현재 분 안에서 0~59초 범위를 0~100%로 매핑
+  const secondsProgress = Math.max(0, Math.min(1, seconds / 59));
 
   // 번인 방지 패턴 랜덤화: 페이지 로드 시 랜덤하게 패턴 선택 (픽셀 편중 방지)
   // useRef를 사용하여 컴포넌트 재렌더링 시에도 같은 값 유지
@@ -114,8 +117,35 @@ export const ClockWidget: React.FC<ClockWidgetProps> = ({
           {/* 분 (Minutes) */}
           <span className="leading-none">{m}</span>
           
-          {/* 초 (Seconds) - 작게 표시 */}
-          <span className="font-light ml-2 sm:ml-4 text-gray-600 leading-none tabular-nums" style={{ fontSize: '0.3em' }}>{s}</span>
+          {/* 초 (Seconds) - 세로 진행률 표시 */}
+          <div
+            className="ml-2 sm:ml-4 self-center"
+            role="progressbar"
+            aria-label={`초 진행률 ${seconds} / 59`}
+            aria-valuemin={0}
+            aria-valuemax={59}
+            aria-valuenow={seconds}
+          >
+            <div className="relative w-[7px]" style={{ height: '0.95em' }}>
+              {/* 시작/끝 위치를 보여주는 얇은 라인 (막대 폭보다 넓게) */}
+              <div
+                className="absolute top-0 left-0 w-full h-[1px] bg-white/20 z-[2]"
+                aria-hidden="true"
+              />
+              <div
+                className="absolute bottom-0 left-0 w-full h-[1px] bg-white/20 z-[2]"
+                aria-hidden="true"
+              />
+
+              {/* 실제 트랙/채움은 가운데 3px */}
+              <div className="absolute left-1/2 -translate-x-1/2 w-[3px] bg-white/5 rounded-full overflow-hidden h-full relative">
+                <div
+                  className="absolute bottom-0 left-0 w-full bg-blue-400/70 rounded-full transition-all duration-300"
+                  style={{ height: `${secondsProgress * 100}%` }}
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
